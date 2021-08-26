@@ -25,6 +25,10 @@ inputs:
     description: 'Maintainer name.'
     default: ''
     required: false
+  description:
+    description: 'Product description.'
+    default: ''
+    required: false
   homepage:
     description: 'Product homepage.'
     default: ''

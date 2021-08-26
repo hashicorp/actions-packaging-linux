@@ -12,6 +12,7 @@ type NfpmInput struct {
 	Arch        string
 	Version     string
 	Maintainer  string
+	Description string
 	Homepage    string
 	License     string
 	Depends     []string
@@ -66,6 +67,7 @@ func main() {
 	inputArch := os.Getenv("INPUT_ARCH")
 	inputVersion := os.Getenv("INPUT_VERSION")
 	inputMaintainer := os.Getenv("INPUT_MAINTAINER")
+	inputDescription := os.Getenv("INPUT_DESCRIPTION")
 	inputHomepage := os.Getenv("INPUT_HOMEPAGE")
 	inputLicense := os.Getenv("INPUT_LICENSE")
 	inputDepends := os.Getenv("INPUT_DEPENDS")
@@ -83,6 +85,7 @@ func main() {
 		Arch:        inputArch,
 		Version:     inputVersion,
 		Maintainer:  inputMaintainer,
+		Description: inputDescription,
 		Homepage:    inputHomepage,
 		License:     inputLicense,
 		Depends:     depends,
@@ -107,6 +110,7 @@ arch: {{ .Arch }}
 platform: linux
 version: {{ .Version }}
 maintainer: {{ .Maintainer }}
+description: {{ .Description }}
 homepage: {{ .Homepage }}
 license: {{ .License }}
 depends:
