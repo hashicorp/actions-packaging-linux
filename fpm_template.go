@@ -33,6 +33,11 @@ type ConfigFile struct {
 func findConfigs(dir string) []*ConfigFile {
 	var configs []*ConfigFile
 
+	// Dont allow empty string for dir
+	if dir == "" {
+		return []*ConfigFile{}
+	}
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return []*ConfigFile{}
@@ -79,6 +84,9 @@ func main() {
 	inputPostremove := os.Getenv("INPUT_POSTREMOVE")
 
 	depends := strings.Split(inputDepends, ",")
+	if inputDepends == "" {
+		depends = []string{}
+	}
 
 	input := &NfpmInput{
 		Name:        inputName,
@@ -130,8 +138,17 @@ contents:
 {{- end }}
 {{- end }}
 scripts:
+{{- if ne .Preinstall "" }}
   preinstall: {{ .Preinstall }}
+{{- end }}
+{{- if ne .Postinstall "" }}
   postinstall: {{ .Postinstall }}
+{{- end }}
+{{- if ne .Preremove "" }}
   preremove: {{ .Preremove }}
+{{- end }}
+{{- if ne .Postremove "" }}
   postremove: {{ .Postremove }}
+{{- end }}
+
 `
