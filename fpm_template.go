@@ -33,7 +33,7 @@ type ConfigFile struct {
 func findConfigs(dir string) []*ConfigFile {
 	var configs []*ConfigFile
 
-	// Dont allow empty string for dir
+	// Dont assume empty dir means current dir
 	if dir == "" {
 		return []*ConfigFile{}
 	}
