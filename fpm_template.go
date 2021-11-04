@@ -17,6 +17,7 @@ type NfpmInput struct {
 	License     string
 	Depends     []string
 	Binary      string
+	BinaryName  string
 	Preinstall  string
 	Postinstall string
 	Preremove   string
@@ -87,6 +88,7 @@ func main() {
 	if inputDepends == "" {
 		depends = []string{}
 	}
+	binName := filepath.Base(inputBinary)
 
 	input := &NfpmInput{
 		Name:        inputName,
@@ -98,6 +100,7 @@ func main() {
 		License:     inputLicense,
 		Depends:     depends,
 		Binary:      inputBinary,
+		BinaryName:  binName,
 		Preinstall:  inputPreinstall,
 		Postinstall: inputPostinstall,
 		Preremove:   inputPreremove,
@@ -129,7 +132,7 @@ depends:
 {{- end }}
 contents:
   - src: {{ .Binary }}
-    dst: /usr/bin/{{ .Name }}
+    dst: /usr/bin/{{ .BinaryName }}
 {{- with .ConfigFiles }}
 {{- range $index, $element := . }}
   - src: {{ .LocalPath }}
