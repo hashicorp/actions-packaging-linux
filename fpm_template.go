@@ -119,6 +119,7 @@ const nfpmTemplate = `
 name: {{ .Name }}
 arch: {{ .Arch }}
 platform: linux
+release: 1
 version: {{ .Version }}
 maintainer: {{ .Maintainer }}
 description: {{ .Description }}
