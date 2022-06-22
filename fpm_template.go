@@ -90,6 +90,16 @@ func main() {
 	}
 	binName := filepath.Base(inputBinary)
 
+	// This maps to "armv7hl" for rpm and "armhf" for deb
+	// "arm" is not a valid arch for either type, and it
+	// does not get mapped automatically in nfpm
+	// The "arm7" arch targets raspberry pi and similar chips
+	// https://fedoraproject.org/wiki/Architectures/ARM
+	// https://wiki.debian.org/SupportedArchitectures
+	if inputArch == "arm" {
+		inputArch = "arm7"
+	}
+
 	input := &NfpmInput{
 		Name:        inputName,
 		Arch:        inputArch,
