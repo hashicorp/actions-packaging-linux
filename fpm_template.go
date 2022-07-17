@@ -142,8 +142,10 @@ depends:
 {{- end }}
 {{- end }}
 contents:
+{{ if .Binary }}
   - src: {{ .Binary }}
     dst: /usr/bin/{{ .BinaryName }}
+{{ end }}
 {{- with .ConfigFiles }}
 {{- range $index, $element := . }}
   - src: {{ .LocalPath }}
