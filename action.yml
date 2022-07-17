@@ -40,7 +40,7 @@ inputs:
   binary:
     description: 'Binary location to package.'
     default: ''
-    required: true
+    required: false
   config_dir:
     description: 'Directory of configs in desired filesystem structure.'
     default: ''
