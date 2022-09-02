@@ -17,7 +17,7 @@ type NfpmInput struct {
 	License     string
 	Depends     []string
 	Binary      string
-	BinaryName  string
+	BinaryDest  string
 	Preinstall  string
 	Postinstall string
 	Preremove   string
@@ -78,6 +78,7 @@ func main() {
 	inputLicense := os.Getenv("INPUT_LICENSE")
 	inputDepends := os.Getenv("INPUT_DEPENDS")
 	inputBinary := os.Getenv("INPUT_BINARY")
+	inputBinPath := os.Getenv("INPUT_BIN_PATH")
 	inputConfigDir := os.Getenv("INPUT_CONFIG_DIR")
 	inputPreinstall := os.Getenv("INPUT_PREINSTALL")
 	inputPostinstall := os.Getenv("INPUT_POSTINSTALL")
@@ -89,6 +90,7 @@ func main() {
 		depends = []string{}
 	}
 	binName := filepath.Base(inputBinary)
+	binDest := filepath.Join(inputBinPath, binName)
 
 	// This maps to "armv7hl" for rpm and "armhf" for deb
 	// "arm" is not a valid arch for either type, and it
@@ -110,7 +112,7 @@ func main() {
 		License:     inputLicense,
 		Depends:     depends,
 		Binary:      inputBinary,
-		BinaryName:  binName,
+		BinaryDest:  binDest,
 		Preinstall:  inputPreinstall,
 		Postinstall: inputPostinstall,
 		Preremove:   inputPreremove,
@@ -142,8 +144,10 @@ depends:
 {{- end }}
 {{- end }}
 contents:
+{{- if ne .Binary "" }}
   - src: {{ .Binary }}
-    dst: /usr/bin/{{ .BinaryName }}
+    dst: {{ .BinaryDest }}
+{{- end }}
 {{- with .ConfigFiles }}
 {{- range $index, $element := . }}
   - src: {{ .LocalPath }}
