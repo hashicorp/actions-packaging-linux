@@ -76,6 +76,8 @@ func main() {
 	inputName := os.Getenv("INPUT_NAME")
 	inputArch := os.Getenv("INPUT_ARCH")
 	inputVersion := os.Getenv("INPUT_VERSION")
+	inputMaintainer := os.Getenv("INPUT_MAINTAINER")
+	inputVendor := os.Getenv("INPUT_VENDOR")
 	inputDescription := os.Getenv("INPUT_DESCRIPTION")
 	inputHomepage := os.Getenv("INPUT_HOMEPAGE")
 	inputLicense := os.Getenv("INPUT_LICENSE")
@@ -95,15 +97,6 @@ func main() {
 	binName := filepath.Base(inputBinary)
 	binDest := filepath.Join(inputBinPath, binName)
 
-	inputVendor := os.Getenv("INPUT_VENDOR")
-	if inputVendor == "" {
-		inputVendor = "HashiCorp"
-	}
-
-	inputMaintainer := os.Getenv("INPUT_MAINTAINER")
-	if inputVendor == "" {
-		inputVendor = "HashiCorp"
-	}
 	// This maps to "armv7hl" for rpm and "armhf" for deb
 	// "arm" is not a valid arch for either type, and it
 	// does not get mapped automatically in nfpm

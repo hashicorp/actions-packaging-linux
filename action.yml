@@ -30,7 +30,7 @@ inputs:
     required: false
   vendor:
     description: 'Vendor name'
-    default: ''
+    default: 'HashiCorp'
     required: false
   description:
     description: 'Product description.'

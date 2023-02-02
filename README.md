@@ -10,6 +10,7 @@ This is a GitHub Action wrapper around nFPM, used to produce DEBs and RPMs.
 | `arch`       | Build architecture.                      |                |
 | `version`    | Product semver version. |  |
 | `maintainer` | Maintainer name. | |
+| `vendor`     | Default vendor. | HashiCorp |
 | `description` | Product description. | |
 | `homepage`    | Product homepage. | |
 | `license`     | Product usage license. | |
