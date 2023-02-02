@@ -28,6 +28,10 @@ inputs:
     description: 'Maintainer name.'
     default: ''
     required: false
+  vendor:
+    description: 'Vendor name'
+    default: ''
+    required: false
   description:
     description: 'Product description.'
     default: ''
