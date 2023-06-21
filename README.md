@@ -1,4 +1,6 @@
-# Package
+# actions-packaging-linux [![Heimdall](https://heimdall.hashicorp.services/api/v1/assets/actions-packaging-linux/badge.svg?key=a504c3bd609f201a9718f56fc5e56613de4d6a052794adf9b06b2a529ddd741a)](https://heimdall.hashicorp.services/site/assets/actions-packaging-linux)
+
+_For internal HashiCorp use only. The output of this action is specifically designed to satisfy the needs of our internal deployment system, and may not be useful to other organizations._
 
 This is a GitHub Action wrapper around nFPM, used to produce DEBs and RPMs.
 
@@ -35,3 +37,4 @@ if it's not `1`.
 1. Push the tag while you're on the `main` branch
 1. `git tag -d v1 && git push origin :refs/tags/v1`
 1. `git tag v1 && git push origin v1`
+
