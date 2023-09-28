@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 # Debian GNU/Linux 10 (1.13.10-buster)
-FROM golang:1.16-buster
+FROM docker.mirror.hashicorp.services/golang:1.21
 
 ENV GO111MODULE=on
 ENV CGO_ENABLED=0
