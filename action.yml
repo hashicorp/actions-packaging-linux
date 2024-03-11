@@ -48,10 +48,6 @@ inputs:
     description: 'Binary location to package.'
     default: ''
     required: false
-  bin_path:
-    description: 'Path to install the binary at'
-    default: '/usr/bin'
-    required: false
   config_dir:
     description: 'Directory of configs in desired filesystem structure.'
     default: ''
@@ -102,7 +98,6 @@ runs:
     INPUT_LICENSE: ${{ inputs.license }}
     INPUT_DEPENDS: ${{ inputs.depends }}
     INPUT_BINARY: ${{ inputs.binary }}
-    INPUT_BIN_PATH: ${{ inputs.bin_path }}
     INPUT_CONFIG_DIR: ${{ inputs.config_dir }}
     INPUT_PREINSTALL: ${{ inputs.preinstall }}
     INPUT_POSTINSTALL: ${{ inputs.postinstall }}
