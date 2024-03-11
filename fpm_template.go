@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -127,10 +128,12 @@ func main() {
 
 	input.ConfigFiles = findConfigs(inputConfigDir)
 
-	var t *template.Template
-	t = template.Must(template.New("nfpm").Parse(nfpmTemplate))
+	t := template.Must(template.New("nfpm").Parse(nfpmTemplate))
 
-	t.Execute(os.Stdout, input)
+	if err := t.Execute(os.Stdout, input); err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }
 
 const nfpmTemplate = `

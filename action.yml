@@ -80,10 +80,102 @@ inputs:
     description: 'Postremove script location.'
     default: ''
     required: false
+  nfpm_destination:
+    description: "Where to install the nFPM binary (default: $HOME/bin/nfpm)"
+    type: string
+    default: "$HOME/bin/nfpm"
+  nfpm_version:
+    description: "The version of nFPM to install (default: latest)"
+    type: string
+    default: Latest
 
-# action runner (golang:latest image)
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: composite
   env:
-    GO111MODULE: 'on'
+    INPUT_NAME: ${{ inputs.name }}
+    INPUT_ARCH: ${{ inputs.arch }}
+    INPUT_VERSION: ${{ inputs.version }}
+    INPUT_MAINTAINER: ${{ inputs.maintainer }}
+    INPUT_VENDOR: ${{ inputs.vendor }}
+    INPUT_DESCRIPTION: ${{ inputs.description }}
+    INPUT_HOMEPAGE: ${{ inputs.homepage
+    INPUT_LICENSE: ${{ inputs.license }}
+    INPUT_DEPENDS: ${{ inputs.depends }}
+    INPUT_BINARY: ${{ inputs.binary }}
+    INPUT_BIN_PATH: ${{ inputs.bin_path }}
+    INPUT_CONFIG_DIR: ${{ inputs.config_dir }}
+    INPUT_PREINSTALL: ${{ inputs.preinstall }}
+    INPUT_POSTINSTALL: ${{ inputs.postinstall }}
+    INPUT_PREREMOVE: ${{ inputs.preremove }}
+    INPUT_POSTREMOVE: ${{ inputs.postremove }}
+  steps:
+    - uses: actions/checkout@v4
+    - id: Install nFPM
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        VERSION=$(gh release list -R goreleaser/nfpm --exclude-drafts --exclude-pre-releases | grep ${{ inputs.nfpm_version }} | cut -f1)
+
+        mkdir -p $(dirname ${{ inputs.nfpm_destination }})
+        DESTINATION="$(readlink -f "${{ inputs.nfpm_destination }}")"
+        DESTINATION_DIR="$(dirname "$DESTINATION")"
+        echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
+
+        case "$RUNNER_ARCH" in
+          ARM)
+            printf "nfpm is not built for ARM, please build packages on X86, X64, or ARM64 runners" 1>&2
+            exit 1
+            ;;
+          ARM64)
+            ARCH="arm64"
+          X64)
+            ARCH="amd64"
+            ;;
+          X86)
+            ARCH="x86_64"
+            ;;
+        esac
+
+        OS="$RUNNER_OS"
+        case "$RUNNER_OS" in
+          macOS)
+            OS="Darwin"
+            ;;
+          Windows)
+            printf "this action must be run on Linux or macOS runner" 1>&2
+            exit 1
+            ;;
+        esac
+
+        mkdir -p tmp
+        gh release download "$VERSION" -p "nfpm_*_${OS}_${ARCH}.tar.gz" -O tmp/nfpm.tgz -R goreleaser/nfpm
+        pushd tmp && tar -xvf nfpm.tgz && popd
+        mv tmp/nfpm/nfpm "$DESTINATION"
+        rm -rf tmp/nfpm
+    - name: Check for a Go compiler
+      id: check_go
+      shell: bash
+      run: |
+        go_installed="false"
+        if type go >/dev/null 2>&1; then
+          go_installed="true"
+        fi
+        echo "is_installed=${go_installed}" | tee -a "$GITHUB_OUTPUT"
+    - if: steps.check_go.is_installed == 'false'
+      uses: actions/setup-go@v5
+      with:
+        cache: false
+        go-version-file: go.mod
+    - name: Package rpm
+      shell: bash
+      run: |
+        INPUT_DEPENDS="${{ inputs.rpm_depends }}" go run . > ./nfpm_rpm_config.yaml
+        mkdir -p ./out
+        nfpm package -f ./nfpm_rpm_config.yaml -p rpm -t ./out/
+    - name: Package deb
+      shell: bash
+      run: |
+        INPUT_DEPENDS="${{ inputs.deb_depends }}" go run . > ./nfpm_deb_config.yaml
+        mkdir -p ./out
+        nfpm package -f ./nfpm_deb_config.yaml -p deb -t ./out/

@@ -1,0 +1,32 @@
+name: test
+on:
+  pull_request:
+
+jobs:
+  test:
+    name: package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Make sure it handles running in workflows that haven't set up a Go toolchain
+        go:
+          - true
+          - false
+    steps:
+      - uses: actions/checkout@v4
+      - if: matrix.go == true
+        uses: actions/setup-go@v5
+        with:
+          cache: false
+          go-version-file: go.mod
+      - run: go build -o myprog .
+      - uses: ./.
+        with:
+          name: myprog
+          description: A test prog
+          arch: amd64
+          version: 1.0.0
+          maintainer: HashiCorp
+          homepage: https://github.com/hashicorp/actions-packaging-linux
+          license: MPL-2.0
+          binary: myprog
