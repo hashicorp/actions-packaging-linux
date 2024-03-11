@@ -4,29 +4,41 @@ on:
 
 jobs:
   test:
-    name: package
+    name: packaging
     runs-on: ubuntu-latest
     strategy:
       matrix:
         # Make sure it handles running in workflows that haven't set up a Go toolchain
-        go:
+        go_toolchain_preinstalled:
           - true
           - false
     steps:
       - uses: actions/checkout@v4
-      - if: matrix.go == true
+        with:
+          path: build
+      - if: matrix.go_toolchain_preinstalled == true
         uses: actions/setup-go@v5
         with:
           cache: false
-          go-version-file: go.mod
-      - run: go build -o myprog .
-      - uses: ./.
+          go-version-file: build/go.mod
+      - name: build binary
+        id: build
+        working-directory: build
+        run: |
+          go build -o template .
+          echo "binary-path=$(readlink -f template)" | tee -a "$GITHUB_OUTPUT"
+          ls -la
+      - uses: actions/checkout@v4
         with:
-          name: myprog
-          description: A test prog
+          path: action
+      - uses: ./action
+        with:
+          name: template
+          description: Test packing the binary
           arch: amd64
           version: 1.0.0
           maintainer: HashiCorp
           homepage: https://github.com/hashicorp/actions-packaging-linux
           license: MPL-2.0
-          binary: myprog
+          binary: ${{ steps.build.outputs.binary-path }}
+          bin_path: /usr/local/bin
