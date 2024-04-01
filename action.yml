@@ -10,6 +10,10 @@ author: 'Kyle Penfound <kpenfound@hashicorp.com>'
 # action description
 description: 'Packages binaries using nfpm.'
 
+branding:
+  icon: package
+  color: purple
+
 # action input values
 inputs:
   name:
@@ -48,10 +52,6 @@ inputs:
     description: 'Binary location to package.'
     default: ''
     required: false
-  bin_path:
-    description: 'Path to install the binary at'
-    default: '/usr/bin'
-    required: false
   config_dir:
     description: 'Directory of configs in desired filesystem structure.'
     default: ''
@@ -80,10 +80,132 @@ inputs:
     description: 'Postremove script location.'
     default: ''
     required: false
+  nfpm_destination:
+    description: "Where to install the nFPM binary (default: $HOME/bin/nfpm)"
+    type: string
+    default: "$HOME/bin/nfpm"
+  nfpm_version:
+    description: "The version of nFPM to install (default: latest)"
+    type: string
+    default: Latest
 
-# action runner (golang:latest image)
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: composite
   env:
-    GO111MODULE: 'on'
+    INPUT_NAME: ${{ inputs.name }}
+    INPUT_ARCH: ${{ inputs.arch }}
+    INPUT_VERSION: ${{ inputs.version }}
+    INPUT_MAINTAINER: ${{ inputs.maintainer }}
+    INPUT_VENDOR: ${{ inputs.vendor }}
+    INPUT_DESCRIPTION: ${{ inputs.description }}
+    INPUT_HOMEPAGE: ${{ inputs.homepage
+    INPUT_LICENSE: ${{ inputs.license }}
+    INPUT_DEPENDS: ${{ inputs.depends }}
+    INPUT_BINARY: ${{ inputs.binary }}
+    INPUT_CONFIG_DIR: ${{ inputs.config_dir }}
+    INPUT_PREINSTALL: ${{ inputs.preinstall }}
+    INPUT_POSTINSTALL: ${{ inputs.postinstall }}
+    INPUT_PREREMOVE: ${{ inputs.preremove }}
+    INPUT_POSTREMOVE: ${{ inputs.postremove }}
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        path: nfpm_packaging
+    - name: Install nFPM
+      working-directory: nfpm_packaging
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        VERSION=$(gh release list -R goreleaser/nfpm --exclude-drafts --exclude-pre-releases | grep ${{ inputs.nfpm_version }} | cut -f1)
+
+        mkdir -p "$(dirname "${{ inputs.nfpm_destination }}")"
+        DESTINATION="$(readlink -f ${{ inputs.nfpm_destination }})"
+        DESTINATION_DIR="$(dirname "$DESTINATION")"
+        echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
+
+        case "$RUNNER_ARCH" in
+          ARM)
+            printf "nfpm is not built for ARM, please build packages on X86, X64, or ARM64 runners" 1>&2
+            exit 1
+            ;;
+          X86)
+            printf "nfpm is not built for X86, please build packages on X64 or ARM64 runners" 1>&2
+            exit 1
+            ;;
+          ARM64)
+            ARCH="arm64"
+            ;;
+          X64)
+            ARCH="x86_64"
+            ;;
+        esac
+
+        OS="$RUNNER_OS"
+        case "$RUNNER_OS" in
+          macOS)
+            OS="Darwin"
+            ;;
+          Windows)
+            printf "this action must be run on Linux or macOS runner" 1>&2
+            exit 1
+            ;;
+        esac
+
+        mkdir -p tmp/nfpm
+        pushd tmp/nfpm || exit 1
+        gh release download "$VERSION" -p "nfpm_*_${OS}_${ARCH}.tar.gz" -O nfpm.tgz -R goreleaser/nfpm
+        tar -xvf nfpm.tgz
+        mv nfpm "$DESTINATION"
+        popd || exit 1
+        #rm -rf tmp/nfpm
+    - name: Check for a Go compiler
+      id: check_go
+      shell: bash
+      run: |
+        go_installed="false"
+        if type go >/dev/null 2>&1; then
+          go_installed="true"
+        fi
+        echo "is_installed=${go_installed}" | tee -a "$GITHUB_OUTPUT"
+    - if: steps.check_go.is_installed == 'false'
+      uses: actions/setup-go@v5
+      with:
+        cache: false
+        go-version-file: go.mod
+    - name: Package binary
+      shell: bash
+      working-directory: nfpm_packaging
+      env:
+        # These environment variables are used by the template program that generates the nfpm config
+        INPUT_NAME: ${{ inputs.name }}
+        INPUT_ARCH: ${{ inputs.arch }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_MAINTAINER: ${{ inputs.maintainer }}
+        INPUT_VENDOR: ${{ inputs.vendor }}
+        INPUT_DESCRIPTION: ${{ inputs.description }}
+        INPUT_HOMEPAGE: ${{ inputs.homepage }}
+        INPUT_LICENSE: ${{ inputs.license }}
+        INPUT_DEPENDS: ${{ inputs.depends }}
+        INPUT_BINARY: ${{ inputs.binary }}
+        INPUT_BIN_PATH: ${{ inputs.bin_path }}
+        INPUT_CONFIG_DIR: ${{ inputs.config_dir }}
+        INPUT_PREINSTALL: ${{ inputs.preinstall }}
+        INPUT_POSTINSTALL: ${{ inputs.postinstall }}
+        INPUT_PREREMOVE: ${{ inputs.preremove }}
+        INPUT_POSTREMOVE: ${{ inputs.postremove }}
+      run: |
+        if ! fileo=$(file "${{ inputs.binary }}"); then
+          printf "could not find a binary to package"
+          exit 1
+        else
+          printf "packaging binary %s" "$fileo"
+        fi
+        go build -o nfpm_template .
+        INPUT_DEPENDS="${{ inputs.rpm_depends }}" ./nfpm_template > ./nfpm_rpm_config.yml
+        INPUT_DEPENDS="${{ inputs.deb_depends }}" ./nfpm_template > ./nfpm_deb_config.yml
+        cat ./nfpm_*_config.yml
+        mkdir -p ./out
+        nfpm package -f ./nfpm_rpm_config.yml -p rpm -t ./out/
+        nfpm package -f ./nfpm_deb_config.yml -p deb -t ./out/
+        ls -la ./out
