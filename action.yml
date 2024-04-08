@@ -52,6 +52,10 @@ inputs:
     description: 'Binary location to package.'
     default: ''
     required: false
+  bin_path:
+    description: 'Path to install the binary at'
+    default: '/usr/bin'
+    required: false
   config_dir:
     description: 'Directory of configs in desired filesystem structure.'
     default: ''
@@ -91,22 +95,6 @@ inputs:
 
 runs:
   using: composite
-  env:
-    INPUT_NAME: ${{ inputs.name }}
-    INPUT_ARCH: ${{ inputs.arch }}
-    INPUT_VERSION: ${{ inputs.version }}
-    INPUT_MAINTAINER: ${{ inputs.maintainer }}
-    INPUT_VENDOR: ${{ inputs.vendor }}
-    INPUT_DESCRIPTION: ${{ inputs.description }}
-    INPUT_HOMEPAGE: ${{ inputs.homepage
-    INPUT_LICENSE: ${{ inputs.license }}
-    INPUT_DEPENDS: ${{ inputs.depends }}
-    INPUT_BINARY: ${{ inputs.binary }}
-    INPUT_CONFIG_DIR: ${{ inputs.config_dir }}
-    INPUT_PREINSTALL: ${{ inputs.preinstall }}
-    INPUT_POSTINSTALL: ${{ inputs.postinstall }}
-    INPUT_PREREMOVE: ${{ inputs.preremove }}
-    INPUT_POSTREMOVE: ${{ inputs.postremove }}
   steps:
     - uses: actions/checkout@v4
       with:
