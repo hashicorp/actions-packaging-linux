@@ -6,4 +6,3 @@ tags:
   type: github-action
   crt-compatible: true
   exempt: tool-roam-config
-
