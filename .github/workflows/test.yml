@@ -26,7 +26,7 @@ jobs:
         working-directory: build
         run: |
           go build -o template .
-          echo "binary-path=$(readlink -f template)" | tee -a "$GITHUB_OUTPUT"
+          echo "binary-path=build/template" | tee -a "$GITHUB_OUTPUT"
           ls -la
       - uses: actions/checkout@v4
         with:
