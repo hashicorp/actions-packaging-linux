@@ -210,19 +210,17 @@ runs:
           printf "packaging binary %s" "$fileo"
         fi
 
+        mkdir -p ./out
+
         package() {
           local config_file
-          config_file="nfpm_"$1"_config.yml"
+          config_file="nfpm_${1}_config.yml"
           if ! INPUT_DEPENDS="$2" nfpm_template > "$config_file"; then
             printf "failed to executing nfpm_template for $1"
             exit 1
           fi
           cat "$config_file"
-          mkdir -p ./out
-          if ! nfpm package -f "$config_file" -p ${1} -t ./out/; then
-            printf "failed to create package with nfpm for $1 using config $(cat $config_file)\n"
-            exit 1
-          fi
+          nfpm package -f "$config_file" -p ${1} -t ./out/
         }
 
         package rpm "${{ inputs.rpm_depends }}"
