@@ -88,10 +88,19 @@ inputs:
     description: "Where to install the nFPM binary (default: $HOME/bin/nfpm)"
     type: string
     default: "$HOME/bin/nfpm"
+  nfpm_template_destination:
+    description: "Where to install the nfpm_template binary (default: $HOME/bin/nfpm_template)"
+    type: string
+    default: "$HOME/bin/nfpm_template"
   nfpm_version:
     description: "The version of nFPM to install (default: latest)"
     type: string
     default: Latest
+  do_not_override_action_ref:
+    description: |
+      Don't ever override this. It's a workaround for a runner bug with composite nested actions.
+      See: https://github.com/actions/runner/issues/2473#issuecomment-1776051383
+    default: ${{ github.action_ref }}
 
 runs:
   using: composite
@@ -99,6 +108,8 @@ runs:
     - uses: actions/checkout@v4
       with:
         path: nfpm_packaging
+        repository: hashicorp/actions-packaging-linux
+        ref: ${{ inputs.do_not_override_action_ref }}
     - name: Install nFPM
       working-directory: nfpm_packaging
       shell: bash
@@ -161,9 +172,18 @@ runs:
       with:
         cache: false
         go-version-file: go.mod
-    - name: Package binary
+    - name: Build nfpm_template binary
       shell: bash
       working-directory: nfpm_packaging
+      run: |
+        mkdir -p "$(dirname "${{ inputs.nfpm_template_destination }}")"
+        DESTINATION="$(readlink -f ${{ inputs.nfpm_template_destination }})"
+        DESTINATION_DIR="$(dirname "$DESTINATION")"
+        echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
+        go build -o nfpm_template .
+        mv nfpm_template "$DESTINATION"
+    - name: Package binary
+      shell: bash
       env:
         # These environment variables are used by the template program that generates the nfpm config
         INPUT_NAME: ${{ inputs.name }}
@@ -184,16 +204,26 @@ runs:
         INPUT_POSTREMOVE: ${{ inputs.postremove }}
       run: |
         if ! fileo=$(file "${{ inputs.binary }}"); then
-          printf "could not find a binary to package"
+          printf "could not find binary: $(pwd)\n$(ls)"
           exit 1
         else
           printf "packaging binary %s" "$fileo"
         fi
-        go build -o nfpm_template .
-        INPUT_DEPENDS="${{ inputs.rpm_depends }}" ./nfpm_template > ./nfpm_rpm_config.yml
-        INPUT_DEPENDS="${{ inputs.deb_depends }}" ./nfpm_template > ./nfpm_deb_config.yml
-        cat ./nfpm_*_config.yml
-        mkdir -p ./out
-        nfpm package -f ./nfpm_rpm_config.yml -p rpm -t ./out/
-        nfpm package -f ./nfpm_deb_config.yml -p deb -t ./out/
-        ls -la ./out
+
+        package() {
+          local config_file
+          config_file="nfpm_"$1"_config.yml"
+          if ! INPUT_DEPENDS="$2" nfpm_template > "$config_file"; then
+            printf "failed to executing nfpm_template for $1"
+            exit 1
+          fi
+          cat "$config_file"
+          mkdir -p ./out
+          if ! nfpm package -f "$config_file" -p ${1} -t ./out/; then
+            printf "failed to create package with nfpm for $1 using config $(cat $config_file)\n"
+            exit 1
+          fi
+        }
+
+        package rpm "${{ inputs.rpm_depends }}"
+        package deb "${{ inputs.deb_depends }}"
