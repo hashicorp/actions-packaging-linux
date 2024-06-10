@@ -42,3 +42,16 @@ jobs:
           license: MPL-2.0
           binary: ${{ steps.build.outputs.binary-path }}
           bin_path: /usr/local/bin
+          file_permissions: 0o027
+
+      - name: dump RPM
+        run: |
+          echo "::group::maybe install rpm" 1>&2
+          # runner is ubuntu, install rpm if it's not already available
+          which rpm || apt install -y rpm
+          echo "::endgroup::" 1>&2
+          rpm -qplv out/*.rpm
+
+      - name: dump deb
+        run: |
+          dpkg -c out/*.deb

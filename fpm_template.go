@@ -12,21 +12,22 @@ import (
 )
 
 type NfpmInput struct {
-	Name        string
-	Arch        string
-	Version     string
-	Maintainer  string
-	Vendor      string
-	Description string
-	Homepage    string
-	License     string
-	Depends     []string
-	Binary      string
-	BinaryDest  string
-	Preinstall  string
-	Postinstall string
-	Preremove   string
-	Postremove  string
+	Name            string
+	Arch            string
+	Version         string
+	Maintainer      string
+	Vendor          string
+	Description     string
+	Homepage        string
+	License         string
+	Depends         []string
+	Binary          string
+	BinaryDest      string
+	Preinstall      string
+	Postinstall     string
+	Preremove       string
+	Postremove      string
+	FilePermissions string
 
 	ConfigFiles []*ConfigFile
 }
@@ -90,6 +91,7 @@ func main() {
 	inputPostinstall := os.Getenv("INPUT_POSTINSTALL")
 	inputPreremove := os.Getenv("INPUT_PREREMOVE")
 	inputPostremove := os.Getenv("INPUT_POSTREMOVE")
+	inputPermissions := os.Getenv("INPUT_FILEPERMISSIONS")
 
 	depends := strings.Split(inputDepends, ",")
 	if inputDepends == "" {
@@ -109,21 +111,22 @@ func main() {
 	}
 
 	input := &NfpmInput{
-		Name:        inputName,
-		Arch:        inputArch,
-		Version:     inputVersion,
-		Maintainer:  inputMaintainer,
-		Vendor:      inputVendor,
-		Description: inputDescription,
-		Homepage:    inputHomepage,
-		License:     inputLicense,
-		Depends:     depends,
-		Binary:      inputBinary,
-		BinaryDest:  binDest,
-		Preinstall:  inputPreinstall,
-		Postinstall: inputPostinstall,
-		Preremove:   inputPreremove,
-		Postremove:  inputPostremove,
+		Name:            inputName,
+		Arch:            inputArch,
+		Version:         inputVersion,
+		Maintainer:      inputMaintainer,
+		Vendor:          inputVendor,
+		Description:     inputDescription,
+		Homepage:        inputHomepage,
+		License:         inputLicense,
+		Depends:         depends,
+		Binary:          inputBinary,
+		BinaryDest:      binDest,
+		Preinstall:      inputPreinstall,
+		Postinstall:     inputPostinstall,
+		Preremove:       inputPreremove,
+		Postremove:      inputPostremove,
+		FilePermissions: inputPermissions,
 	}
 
 	input.ConfigFiles = findConfigs(inputConfigDir)
@@ -152,6 +155,9 @@ depends:
 {{- range $index, $element := . }}
   - {{ . }}
 {{- end }}
+{{- end }}
+{{- if ne .FilePermissions "" }}
+umask: {{ .FilePermissions }}
 {{- end }}
 contents:
 {{- if ne .Binary "" }}
