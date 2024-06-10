@@ -60,6 +60,14 @@ inputs:
     description: 'File permissions applied to all files in the package; specify in yaml/octal format: `0o022`; if empty, permissions are unmodified.'
     default: ''
     required: false
+  user_owner:
+    description: 'The user name or ID that should own the files in the package; e.g.: root'
+    default: ''
+    required: false
+  group_owner:
+    description: 'The group name or ID that should own the files in the package; e.g.: root'
+    default: ''
+    required: false
   config_dir:
     description: 'Directory of configs in desired filesystem structure.'
     default: ''
@@ -182,6 +190,8 @@ runs:
         INPUT_BINARY: ${{ inputs.binary }}
         INPUT_BIN_PATH: ${{ inputs.bin_path }}
         INPUT_FILEPERMISSIONS: ${{ inputs.file_permissions }}
+        INPUT_USEROWNER: ${{ inputs.user_owner }}
+        INPUT_GROUPOWNER: ${{ inputs.group_owner }}
         INPUT_CONFIG_DIR: ${{ inputs.config_dir }}
         INPUT_PREINSTALL: ${{ inputs.preinstall }}
         INPUT_POSTINSTALL: ${{ inputs.postinstall }}

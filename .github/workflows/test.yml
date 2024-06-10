@@ -43,6 +43,8 @@ jobs:
           binary: ${{ steps.build.outputs.binary-path }}
           bin_path: /usr/local/bin
           file_permissions: 0o027
+          user_owner: root
+          group_owner: vault
 
       - name: dump RPM
         run: |
