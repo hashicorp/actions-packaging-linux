@@ -12,21 +12,24 @@ import (
 )
 
 type NfpmInput struct {
-	Name        string
-	Arch        string
-	Version     string
-	Maintainer  string
-	Vendor      string
-	Description string
-	Homepage    string
-	License     string
-	Depends     []string
-	Binary      string
-	BinaryDest  string
-	Preinstall  string
-	Postinstall string
-	Preremove   string
-	Postremove  string
+	Name            string
+	Arch            string
+	Version         string
+	Maintainer      string
+	Vendor          string
+	Description     string
+	Homepage        string
+	License         string
+	Depends         []string
+	Binary          string
+	BinaryDest      string
+	Preinstall      string
+	Postinstall     string
+	Preremove       string
+	Postremove      string
+	UserOwner       string
+	GroupOwner      string
+	FilePermissions string
 
 	ConfigFiles []*ConfigFile
 }
@@ -90,6 +93,9 @@ func main() {
 	inputPostinstall := os.Getenv("INPUT_POSTINSTALL")
 	inputPreremove := os.Getenv("INPUT_PREREMOVE")
 	inputPostremove := os.Getenv("INPUT_POSTREMOVE")
+	inputPermissions := os.Getenv("INPUT_FILEPERMISSIONS")
+	inputUserOwner := os.Getenv("INPUT_USEROWNER")
+	inputGroupOwner := os.Getenv("INPUT_GROUPOWNER")
 
 	depends := strings.Split(inputDepends, ",")
 	if inputDepends == "" {
@@ -109,21 +115,24 @@ func main() {
 	}
 
 	input := &NfpmInput{
-		Name:        inputName,
-		Arch:        inputArch,
-		Version:     inputVersion,
-		Maintainer:  inputMaintainer,
-		Vendor:      inputVendor,
-		Description: inputDescription,
-		Homepage:    inputHomepage,
-		License:     inputLicense,
-		Depends:     depends,
-		Binary:      inputBinary,
-		BinaryDest:  binDest,
-		Preinstall:  inputPreinstall,
-		Postinstall: inputPostinstall,
-		Preremove:   inputPreremove,
-		Postremove:  inputPostremove,
+		Name:            inputName,
+		Arch:            inputArch,
+		Version:         inputVersion,
+		Maintainer:      inputMaintainer,
+		Vendor:          inputVendor,
+		Description:     inputDescription,
+		Homepage:        inputHomepage,
+		License:         inputLicense,
+		Depends:         depends,
+		Binary:          inputBinary,
+		BinaryDest:      binDest,
+		Preinstall:      inputPreinstall,
+		Postinstall:     inputPostinstall,
+		Preremove:       inputPreremove,
+		Postremove:      inputPostremove,
+		FilePermissions: inputPermissions,
+		UserOwner:       inputUserOwner,
+		GroupOwner:      inputGroupOwner,
 	}
 
 	input.ConfigFiles = findConfigs(inputConfigDir)
@@ -153,16 +162,40 @@ depends:
   - {{ . }}
 {{- end }}
 {{- end }}
+{{- if ne .FilePermissions "" }}
+umask: {{ .FilePermissions }}
+{{- end }}
 contents:
 {{- if ne .Binary "" }}
   - src: {{ .Binary }}
     dst: {{ .BinaryDest }}
+{{- if or (ne .UserOwner "") (ne .GroupOwner "") }}
+    file_info:
+{{- if ne .UserOwner "" }}
+      owner: root
 {{- end }}
+{{- if ne .GroupOwner "" }}
+      group: vault
+{{- end }}
+{{- end }}
+{{- end }}
+{{- /* capture ownership for use in .ConfigFiles subcontext */ -}}
+{{- $userOwner := .UserOwner }}
+{{- $groupOwner := .GroupOwner }}
 {{- with .ConfigFiles }}
 {{- range $index, $element := . }}
   - src: {{ .LocalPath }}
     dst: {{ .DestPath }}
     type: config|noreplace
+{{- if or (ne $userOwner "") (ne $groupOwner "") }}
+    file_info:
+{{- if ne $userOwner "" }}
+      owner: root
+{{- end }}
+{{- if ne $groupOwner "" }}
+      group: vault
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 scripts:
