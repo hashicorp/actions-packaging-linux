@@ -17,6 +17,9 @@ This is a GitHub Action wrapper around nFPM, used to produce DEBs and RPMs.
 | `homepage`    | Product homepage. | |
 | `license`     | Product usage license. | |
 | `binary`      | Binary location to package. | |
+| `file_permissions` | Umask applied to all files in the package; if unspecified, the file permissions are unmodified during packaging. | |
+| `user_owner` | Name of user that should own all files in the package | nFPM's default (root) |
+| `group_owner` | Name of group that should own all files in the package | nFPM's default (root) |
 | `config_dir`  | Directory of configs in desired filesystem structure. | |
 | `deb_depends` | Comma separated list of deb dependencies. | |
 | `rpm_depends` | Comma separated list of rpm dependencies. | |
