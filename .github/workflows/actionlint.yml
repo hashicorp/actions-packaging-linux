@@ -1,0 +1,23 @@
+name: Lint GitHub Actions Workflows
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: "Check workflow files"
+        uses: docker://docker.mirror.hashicorp.services/rhysd/actionlint:latest
+        with:
+          args: -color
