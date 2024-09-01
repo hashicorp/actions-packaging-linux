@@ -117,7 +117,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         path: nfpm_packaging
         repository: hashicorp/actions-packaging-linux
@@ -180,7 +180,7 @@ runs:
         fi
         echo "is_installed=${go_installed}" | tee -a "$GITHUB_OUTPUT"
     - if: steps.check_go.is_installed == 'false'
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
       with:
         cache: false
         go-version-file: go.mod
