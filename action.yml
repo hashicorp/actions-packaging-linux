@@ -127,11 +127,13 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        NFPM_DEST: ${{ inputs.nfpm_destination }}
+        NFPM_VERSION: ${{ inputs.nfpm_version }}
       run: |
-        VERSION=$(gh release list -R goreleaser/nfpm --exclude-drafts --exclude-pre-releases | grep ${{ inputs.nfpm_version }} | cut -f1)
+        VERSION=$(gh release list -R goreleaser/nfpm --exclude-drafts --exclude-pre-releases | grep "$NFPM_VERSION" | cut -f1)
 
-        mkdir -p "$(dirname "${{ inputs.nfpm_destination }}")"
-        DESTINATION="$(readlink -f ${{ inputs.nfpm_destination }})"
+        mkdir -p "$(dirname "$NFPM_DEST")"
+        DESTINATION="$(readlink -f $NFPM_DEST)"
         DESTINATION_DIR="$(dirname "$DESTINATION")"
         echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
 
@@ -187,9 +189,11 @@ runs:
     - name: Build nfpm_template binary
       shell: bash
       working-directory: nfpm_packaging
+      env:
+        TPL_DEST: ${{ inputs.nfpm_template_destination }}
       run: |
-        mkdir -p "$(dirname "${{ inputs.nfpm_template_destination }}")"
-        DESTINATION="$(readlink -f ${{ inputs.nfpm_template_destination }})"
+        mkdir -p "$(dirname "$TPL_DEST")"
+        DESTINATION="$(readlink -f $TPL_DEST)"
         DESTINATION_DIR="$(dirname "$DESTINATION")"
         echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
         go build -o nfpm_template .
@@ -217,8 +221,11 @@ runs:
         INPUT_POSTINSTALL: ${{ inputs.postinstall }}
         INPUT_PREREMOVE: ${{ inputs.preremove }}
         INPUT_POSTREMOVE: ${{ inputs.postremove }}
+
+        INPUT_DEB_DEPENDS: ${{ inputs.deb_depends }}
+        INPUT_RPM_DEPENDS: ${{ inputs.rpm_depends }}
       run: |
-        if ! fileo=$(file "${{ inputs.binary }}"); then
+        if ! fileo=$(file "$INPUT_BINARY"); then
           printf "could not find binary: $(pwd)\n$(ls)"
           exit 1
         else
@@ -238,5 +245,5 @@ runs:
           nfpm package -f "$config_file" -p ${1} -t ./out/
         }
 
-        package rpm "${{ inputs.rpm_depends }}"
-        package deb "${{ inputs.deb_depends }}"
+        package rpm "$INPUT_RPM_DEPENDS"
+        package deb "$INPUT_DEB_DEPENDS"
