@@ -255,5 +255,5 @@ runs:
           nfpm package -f "$config_file" -p "$pkg_type" -t ./out/
         }
 
-        package rpm "$INPUT_RPM_DEPENDS"
-        package deb "$INPUT_DEB_DEPENDS"
+        package rpm "$INPUT_RPM_DEPENDS" "$INPUT_RPM_RECOMMENDS"
+        package deb "$INPUT_DEB_DEPENDS" "$INPUT_DEB_RECOMMENDS"
