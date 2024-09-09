@@ -73,11 +73,19 @@ inputs:
     default: ''
     required: false
   deb_depends:
-    description: 'Comma separated list of deb dependencies.'
+    description: 'Comma-separated list of deb dependencies.  These prerequistes are mandatory at package install-time.'
+    default: ''
+    required: false
+  deb_recommends:
+    description: 'Comma-separated list of deb packages recommended to also be installed.  These packages are optional at package install-time.'
     default: ''
     required: false
   rpm_depends:
-    description: 'Comma separated list of rpm dependencies.'
+    description: 'Comma-separated list of rpm dependencies.  These prerequistes are mandatory at package install-time.'
+    default: ''
+    required: false
+  rpm_recommends:
+    description: 'Comma-separated list of rpm packages recommended to also be installed.  These packages are optional at package install-time.'
     default: ''
     required: false
   preinstall:
@@ -223,7 +231,9 @@ runs:
         INPUT_POSTREMOVE: ${{ inputs.postremove }}
 
         INPUT_DEB_DEPENDS: ${{ inputs.deb_depends }}
+        INPUT_DEB_RECOMMENDS: ${{ inputs.deb_recommends }}
         INPUT_RPM_DEPENDS: ${{ inputs.rpm_depends }}
+        INPUT_RPM_RECOMMENDS: ${{ inputs.rpm_recommends }}
       run: |
         if ! fileo=$(file "$INPUT_BINARY"); then
           printf "could not find binary: $(pwd)\n$(ls)"
@@ -234,10 +244,10 @@ runs:
 
         mkdir -p ./out
 
-        package() { local pkg_type="$1" deps="${2:-}"
+        package() { local pkg_type="$1" deps="${2:-}" recs="${3:-}"
           local config_file
           config_file="nfpm_${pkg_type}_config.yml"
-          if ! INPUT_DEPENDS="$deps" nfpm_template > "$config_file"; then
+          if ! INPUT_DEPENDS="$deps" INPUT_RECOMMENDS="$recs" nfpm_template > "$config_file"; then
             printf "failed to executing nfpm_template for $pkg_type"
             exit 1
           fi
