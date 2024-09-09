@@ -234,15 +234,15 @@ runs:
 
         mkdir -p ./out
 
-        package() {
+        package() { local pkg_type="$1" deps="${2:-}"
           local config_file
-          config_file="nfpm_${1}_config.yml"
-          if ! INPUT_DEPENDS="$2" nfpm_template > "$config_file"; then
-            printf "failed to executing nfpm_template for $1"
+          config_file="nfpm_${pkg_type}_config.yml"
+          if ! INPUT_DEPENDS="$deps" nfpm_template > "$config_file"; then
+            printf "failed to executing nfpm_template for $pkg_type"
             exit 1
           fi
           cat "$config_file"
-          nfpm package -f "$config_file" -p ${1} -t ./out/
+          nfpm package -f "$config_file" -p "$pkg_type" -t ./out/
         }
 
         package rpm "$INPUT_RPM_DEPENDS"
