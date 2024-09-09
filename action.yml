@@ -236,10 +236,11 @@ runs:
         INPUT_RPM_RECOMMENDS: ${{ inputs.rpm_recommends }}
       run: |
         if ! fileo=$(file "$INPUT_BINARY"); then
-          printf "could not find binary: $(pwd)\n$(ls)"
+          printf "could not find binary: %s\n" "$(pwd)"
+          ls
           exit 1
         else
-          printf "packaging binary %s" "$fileo"
+          printf "packaging binary %s\n" "$fileo"
         fi
 
         mkdir -p ./out
@@ -248,7 +249,7 @@ runs:
           local config_file
           config_file="nfpm_${pkg_type}_config.yml"
           if ! INPUT_DEPENDS="$deps" INPUT_RECOMMENDS="$recs" nfpm_template > "$config_file"; then
-            printf "failed to executing nfpm_template for $pkg_type"
+            printf "failed to executing nfpm_template for %s\n" "$pkg_type"
             exit 1
           fi
           cat "$config_file"
