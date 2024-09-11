@@ -73,11 +73,19 @@ inputs:
     default: ''
     required: false
   deb_depends:
-    description: 'Comma separated list of deb dependencies.'
+    description: 'Comma-separated list of deb dependencies.  These prerequistes are mandatory at package install-time.'
+    default: ''
+    required: false
+  deb_recommends:
+    description: 'Comma-separated list of deb packages recommended to also be installed.  These packages are optional at package install-time.'
     default: ''
     required: false
   rpm_depends:
-    description: 'Comma separated list of rpm dependencies.'
+    description: 'Comma-separated list of rpm dependencies.  These prerequistes are mandatory at package install-time.'
+    default: ''
+    required: false
+  rpm_recommends:
+    description: 'Comma-separated list of rpm packages recommended to also be installed.  These packages are optional at package install-time.'
     default: ''
     required: false
   preinstall:
@@ -127,11 +135,13 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        NFPM_DEST: ${{ inputs.nfpm_destination }}
+        NFPM_VERSION: ${{ inputs.nfpm_version }}
       run: |
-        VERSION=$(gh release list -R goreleaser/nfpm --exclude-drafts --exclude-pre-releases | grep ${{ inputs.nfpm_version }} | cut -f1)
+        VERSION=$(gh release list -R goreleaser/nfpm --exclude-drafts --exclude-pre-releases | grep "$NFPM_VERSION" | cut -f1)
 
-        mkdir -p "$(dirname "${{ inputs.nfpm_destination }}")"
-        DESTINATION="$(readlink -f ${{ inputs.nfpm_destination }})"
+        mkdir -p "$(dirname "$NFPM_DEST")"
+        DESTINATION="$(readlink -f $NFPM_DEST)"
         DESTINATION_DIR="$(dirname "$DESTINATION")"
         echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
 
@@ -187,9 +197,11 @@ runs:
     - name: Build nfpm_template binary
       shell: bash
       working-directory: nfpm_packaging
+      env:
+        TPL_DEST: ${{ inputs.nfpm_template_destination }}
       run: |
-        mkdir -p "$(dirname "${{ inputs.nfpm_template_destination }}")"
-        DESTINATION="$(readlink -f ${{ inputs.nfpm_template_destination }})"
+        mkdir -p "$(dirname "$TPL_DEST")"
+        DESTINATION="$(readlink -f $TPL_DEST)"
         DESTINATION_DIR="$(dirname "$DESTINATION")"
         echo "$DESTINATION_DIR" >> "$GITHUB_PATH"
         go build -o nfpm_template .
@@ -217,26 +229,32 @@ runs:
         INPUT_POSTINSTALL: ${{ inputs.postinstall }}
         INPUT_PREREMOVE: ${{ inputs.preremove }}
         INPUT_POSTREMOVE: ${{ inputs.postremove }}
+
+        INPUT_DEB_DEPENDS: ${{ inputs.deb_depends }}
+        INPUT_DEB_RECOMMENDS: ${{ inputs.deb_recommends }}
+        INPUT_RPM_DEPENDS: ${{ inputs.rpm_depends }}
+        INPUT_RPM_RECOMMENDS: ${{ inputs.rpm_recommends }}
       run: |
-        if ! fileo=$(file "${{ inputs.binary }}"); then
-          printf "could not find binary: $(pwd)\n$(ls)"
+        if ! fileo=$(file "$INPUT_BINARY"); then
+          printf "could not find binary: %s\n" "$(pwd)"
+          ls
           exit 1
         else
-          printf "packaging binary %s" "$fileo"
+          printf "packaging binary %s\n" "$fileo"
         fi
 
         mkdir -p ./out
 
-        package() {
+        package() { local pkg_type="$1" deps="${2:-}" recs="${3:-}"
           local config_file
-          config_file="nfpm_${1}_config.yml"
-          if ! INPUT_DEPENDS="$2" nfpm_template > "$config_file"; then
-            printf "failed to executing nfpm_template for $1"
+          config_file="nfpm_${pkg_type}_config.yml"
+          if ! INPUT_DEPENDS="$deps" INPUT_RECOMMENDS="$recs" nfpm_template > "$config_file"; then
+            printf "failed to executing nfpm_template for %s\n" "$pkg_type"
             exit 1
           fi
           cat "$config_file"
-          nfpm package -f "$config_file" -p ${1} -t ./out/
+          nfpm package -f "$config_file" -p "$pkg_type" -t ./out/
         }
 
-        package rpm "${{ inputs.rpm_depends }}"
-        package deb "${{ inputs.deb_depends }}"
+        package rpm "$INPUT_RPM_DEPENDS" "$INPUT_RPM_RECOMMENDS"
+        package deb "$INPUT_DEB_DEPENDS" "$INPUT_DEB_RECOMMENDS"

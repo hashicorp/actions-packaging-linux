@@ -21,6 +21,7 @@ type NfpmInput struct {
 	Homepage        string
 	License         string
 	Depends         []string
+	Recommends      []string
 	Binary          string
 	BinaryDest      string
 	Preinstall      string
@@ -86,6 +87,7 @@ func main() {
 	inputHomepage := os.Getenv("INPUT_HOMEPAGE")
 	inputLicense := os.Getenv("INPUT_LICENSE")
 	inputDepends := os.Getenv("INPUT_DEPENDS")
+	inputRecommends := os.Getenv("INPUT_RECOMMENDS")
 	inputBinary := os.Getenv("INPUT_BINARY")
 	inputBinPath := os.Getenv("INPUT_BIN_PATH")
 	inputConfigDir := os.Getenv("INPUT_CONFIG_DIR")
@@ -100,6 +102,10 @@ func main() {
 	depends := strings.Split(inputDepends, ",")
 	if inputDepends == "" {
 		depends = []string{}
+	}
+	recommends := strings.Split(inputRecommends, ",")
+	if inputRecommends == "" {
+		recommends = []string{}
 	}
 	binName := filepath.Base(inputBinary)
 	binDest := filepath.Join(inputBinPath, binName)
@@ -124,6 +130,7 @@ func main() {
 		Homepage:        inputHomepage,
 		License:         inputLicense,
 		Depends:         depends,
+		Recommends:      recommends,
 		Binary:          inputBinary,
 		BinaryDest:      binDest,
 		Preinstall:      inputPreinstall,
@@ -158,6 +165,12 @@ homepage: {{ .Homepage }}
 license: {{ .License }}
 depends:
 {{- with .Depends }}
+{{- range $index, $element := . }}
+  - {{ . }}
+{{- end }}
+{{- end }}
+{{- with .Recommends }}
+recommends:
 {{- range $index, $element := . }}
   - {{ . }}
 {{- end }}

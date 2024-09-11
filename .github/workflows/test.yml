@@ -45,15 +45,48 @@ jobs:
           file_permissions: 0o027
           user_owner: root
           group_owner: vault
+          rpm_depends: bash
+          rpm_recommends: dmidecode
+          deb_depends: bash
+          deb_recommends: dmidecode
 
+      - uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+        if: matrix.go_toolchain_preinstalled == true # only need one set of artifacts
+        with:
+          name: artifacts
+          path: out
+          if-no-files-found: 'error'
+
+      # Note: "suggested" is always empty, as nFPM does not (yet?) support it.
       - name: dump RPM
         run: |
+          /bin/ls -l out/
           echo "::group::maybe install rpm" 1>&2
           # runner is ubuntu, install rpm if it's not already available
-          which rpm || apt install -y rpm
+          which rpm || apt-get install -y rpm
           echo "::endgroup::" 1>&2
+
+          echo "::group::package contents" 1>&2
           rpm -qplv out/*.rpm
+          echo "::endgroup::" 1>&2
+
+          echo "::group::dependencies" 1>&2
+          rpm -qpv --requires out/*.rpm
+          echo "::endgroup::" 1>&2
+          echo "::group::weak dependencies: recommended packages" 1>&2
+          rpm -qpv --recommends out/*.rpm
+          echo "::endgroup::" 1>&2
+          echo "::group::weak dependencies: suggested packages" 1>&2
+          rpm -qpv --suggests out/*.rpm
+          echo "::endgroup::" 1>&2
 
       - name: dump deb
         run: |
-          dpkg -c out/*.deb
+          /bin/ls -l out/
+          echo "::group::package contents" 1>&2
+          dpkg -c ./out/*.deb
+          echo "::endgroup::" 1>&2
+
+          echo "::group::dependencies and recommended packages" 1>&2
+          apt-cache show ./out/*.deb | grep -E '^(Depends|Recommends|Suggests):' || true
+          echo "::endgroup::" 1>&2
