@@ -13,11 +13,11 @@ jobs:
           - true
           - false
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: build
       - if: matrix.go_toolchain_preinstalled == true
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
           cache: false
           go-version-file: build/go.mod
@@ -28,7 +28,7 @@ jobs:
           go build -o template .
           echo "binary-path=build/template" | tee -a "$GITHUB_OUTPUT"
           ls -la
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: action
       - uses: ./action
@@ -50,7 +50,7 @@ jobs:
           deb_depends: bash
           deb_recommends: dmidecode
 
-      - uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         if: matrix.go_toolchain_preinstalled == true # only need one set of artifacts
         with:
           name: artifacts
