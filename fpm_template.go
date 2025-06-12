@@ -71,6 +71,7 @@ func findConfigs(dir string) []*ConfigFile {
 			return nil
 		})
 	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error walking directory:", err)
 		return []*ConfigFile{}
 	}
 
