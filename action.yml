@@ -106,19 +106,15 @@ inputs:
     required: false
   nfpm_destination:
     description: "Where to install the nFPM binary (default: $HOME/bin/nfpm)"
-    type: string
     default: "$HOME/bin/nfpm"
   nfpm_template_destination:
     description: "Where to install the nfpm_template binary (default: $HOME/bin/nfpm_template)"
-    type: string
     default: "$HOME/bin/nfpm_template"
   nfpm_version:
     description: "The version of nFPM to install (default: Latest)"
-    type: string
     default: Latest
   nfpm_cache:
     description: "Cache the nFPM binary between runs. Defaults to false."
-    type: boolean
     default: "false"
   nfpm_cache_key:
     description: |
@@ -148,7 +144,7 @@ runs:
       run: |
         mkdir -p "$(dirname "${{ inputs.nfpm_destination }}")"
         destination="$(readlink -f "${{ inputs.nfpm_destination }}")"
-        echo "${destination}" | tee -a "$GITHUB_PATH"
+        echo "$(dirname "${destination}")" | tee -a "$GITHUB_PATH"
 
         os="$(echo "$RUNNER_OS" | tr '[:upper:]' '[:lower:]')"
         arch="$(echo "$RUNNER_ARCH" | tr '[:upper:]' '[:lower:]')"

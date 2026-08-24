@@ -3,8 +3,7 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: packaging
+  packaging:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -13,11 +12,11 @@ jobs:
           - true
           - false
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: build
       - if: matrix.go_toolchain_preinstalled == true
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           cache: false
           go-version-file: build/go.mod
@@ -28,7 +27,7 @@ jobs:
           go build -o template .
           echo "binary-path=build/template" | tee -a "$GITHUB_OUTPUT"
           ls -la
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: action
       - uses: ./action
@@ -90,3 +89,69 @@ jobs:
           echo "::group::dependencies and recommended packages" 1>&2
           apt-cache show ./out/*.deb | grep -E '^(Depends|Recommends|Suggests):' || true
           echo "::endgroup::" 1>&2
+
+  caching:
+    name: caching (${{ matrix.nfpm_version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nfpm_version:
+          - Latest
+          - v2.47.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: build
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          cache: false
+          go-version-file: build/go.mod
+      - name: build binary
+        id: build
+        working-directory: build
+        run: |
+          go build -o template .
+          echo "binary-path=build/template" | tee -a "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: action
+      - uses: ./action
+        with:
+          name: template
+          description: Test packing the binary
+          arch: amd64
+          version: 1.0.0
+          maintainer: HashiCorp
+          homepage: https://github.com/hashicorp/actions-packaging-linux
+          license: MPL-2.0
+          binary: ${{ steps.build.outputs.binary-path }}
+          bin_path: /usr/local/bin
+          nfpm_version: ${{ matrix.nfpm_version }}
+          nfpm_cache: 'true'
+      # Run the action again and make sure the nfpm binary was cached. Our action
+      # doesn't expose any of that information (nor should it, really) so we'll
+      # track the mod time binary.
+      - name: Record nfpm mtime after first run
+        id: mtime-before
+        run: echo "mtime=$(stat -c '%Y' "$HOME/bin/nfpm")" | tee -a "$GITHUB_OUTPUT"
+      # Second run: should hit the cache and skip downloading nfpm
+      - uses: ./action
+        with:
+          name: template
+          description: Test packing the binary
+          arch: amd64
+          version: 1.0.0
+          maintainer: HashiCorp
+          homepage: https://github.com/hashicorp/actions-packaging-linux
+          license: MPL-2.0
+          binary: ${{ steps.build.outputs.binary-path }}
+          bin_path: /usr/local/bin
+          nfpm_version: ${{ matrix.nfpm_version }}
+          nfpm_cache: 'true'
+      - name: Verify cache was hit (nfpm binary was not reinstalled)
+        run: |
+          mtime_after="$(stat -c '%Y' "$HOME/bin/nfpm")"
+          if [ "${mtime_after}" != "${{ steps.mtime-before.outputs.mtime }}" ]; then
+            echo "::error::Cache was not hit: nfpm binary was reinstalled (mtime changed from ${{ steps.mtime-before.outputs.mtime }} to ${mtime_after})"
+            exit 1
+          fi
