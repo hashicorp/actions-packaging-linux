@@ -129,6 +129,11 @@ inputs:
       See: https://github.com/actions/runner/issues/2473#issuecomment-1776051383
     default: ${{ github.action_ref }}
 
+outputs:
+  nfpm-cache-hit:
+    description: "'true' if the nFPM binary was restored from cache, 'false' otherwise."
+    value: ${{ steps.cache-nfpm.outputs.cache-hit }}
+
 runs:
   using: composite
   steps:
