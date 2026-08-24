@@ -119,8 +119,9 @@ inputs:
   nfpm_cache_key:
     description: |
       Custom cache key for the nFPM binary. When empty (the default) a key is
-      derived automatically from the OS, architecture, working-directory hash,
-      and resolved nFPM version: nfpm-<os>-<arch>-<wd_hash>-<version>.
+      derived automatically from the OS, architecture, a hash of the resolved
+      nfpm_destination path, and the resolved nFPM version:
+      nfpm-<os>-<arch>-<dest_hash>-<version>.
     default: ""
   do_not_override_action_ref:
     description: |
@@ -197,8 +198,8 @@ runs:
 
         cache_key='${{ inputs.nfpm_cache_key }}'
         if [ -z "${cache_key}" ]; then
-          wd_hash=$(realpath . | sha256sum | head -c 7)
-          cache_key="nfpm-${os}-${arch}-${wd_hash}-${version}"
+          dest_hash=$(echo "${destination}" | sha256sum | head -c 7)
+          cache_key="nfpm-${os}-${arch}-${dest_hash}-${version}"
         fi
 
         {
